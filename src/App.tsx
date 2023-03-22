@@ -1,6 +1,10 @@
-import React, { KeyboardEvent, useEffect, useState } from "react"
+import React, { KeyboardEvent, useEffect, useRef, useState } from "react"
 import "./App.css"
-import { AUTH_ENDPOINT, CLIENT_ID, REDIRECT_URI, RESPONSE_TYPE } from "./config"
+import { API_SERVER, AUTH_ENDPOINT, CLIENT_ID, REDIRECT_URI, RESPONSE_TYPE } from "./config"
+import { ChatGPTResponse, ChatMessage } from "./typings"
+import MusicLoader from "./loader"
+import LoadingBar, { LoadingBarRef } from "react-top-loading-bar"
+import ConnectSpotify from "./ConnectSpotify"
 
 const getVars = (hash: string): { [key: string]: string } => {
     if (hash.substring(0, 1) === "#") {
@@ -15,8 +19,12 @@ const getVars = (hash: string): { [key: string]: string } => {
 
 function App() {
     const [token, setToken] = useState<string | null>(null)
-    const [prompt, setPrompt] = useState<string>("playlist based on new noise by refused")
-    const [response, setResponse] = useState<string>("")
+    const [prompt, setPrompt] = useState<string>("new noise by refused")
+    const [songs, setSongs] = useState<string[]>([])
+    const [loading, setLoading] = useState<boolean>(false)
+    const ref = useRef<LoadingBarRef>(null)
+
+    const [response, setResponse] = useState<ChatMessage | null>(null)
 
     useEffect(() => {
         const hash = window.location.hash
@@ -33,21 +41,54 @@ function App() {
         setToken(token)
     }, [])
 
+    useEffect(() => {
+        if (loading && ref.current) {
+            ref.current.continuousStart()
+        } else if (ref.current) {
+            ref.current.complete()
+        }
+    }, [loading])
+
     const chat = async (e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && prompt !== "") {
-            const res = await fetch(`/.netlify/functions/chat?msg=${prompt}`)
-            const text = await res.text()
-            setResponse(text)
+            setLoading(true)
+            const res = await fetch(`${API_SERVER}/chat`, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ msg: prompt }),
+            })
+            const resp: ChatGPTResponse = await res.json()
+
+            const st = resp.choices[0].message.content.replaceAll("\n", "")
+            console.log(st)
+            const msg: ChatMessage = JSON.parse(st)
+            //setSongs(msg.split("\n"))
+            setResponse(msg)
+            setLoading(false)
         }
     }
 
     return (
         <div className="App">
+            <LoadingBar color="#f11946" ref={ref} />
             <div>
-                {!token && <a href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}`}>Login to Spotify</a>}
-                <input onKeyDown={chat} value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+                <input onKeyDown={chat} value={prompt} disabled={loading} onChange={(e) => setPrompt(e.target.value)} />
+                {response && (
+                    <div>
+                        <h4>{response.title}</h4>
+                        <ul>
+                            {response.songs.map((song, i) => (
+                                <li key={`song-${i}`}>{`${i + 1}: ${song.title} - ${song.artist}`}</li>
+                            ))}
+                        </ul>
+                        <p>{response.description}</p>
+                    </div>
+                )}
             </div>
-            <div>{response}</div>
+            {!token && <ConnectSpotify />}
         </div>
     )
 }

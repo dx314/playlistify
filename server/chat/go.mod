@@ -1,8 +1,8 @@
 module github.com/dx314/playlistify
 
-go 1.18
+go 1.20
 
 require (
-	github.com/aws/aws-lambda-go v1.38.0
 	github.com/otiai10/openaigo v1.0.0
+	github.com/rs/cors v1.8.3
 )

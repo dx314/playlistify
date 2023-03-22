@@ -5,6 +5,36 @@
   text-align: center;
 }
 
+.App {
+  min-width: 600px;
+  min-height: 600px;
+}
+
+#root p {
+  text-align: center;
+  max-width: 550px;
+}
+
+ul
+{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.spotify-connect {
+  color: #1DB954;
+  border: 1px solid #1DB954;
+  border-radius: 10px;
+  padding: 20px 50px;
+  margin: 20px;
+}
+
+.spotify-connect a {
+  color: #1DB954;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

@@ -1,0 +1,5 @@
+github.com/otiai10/mint v1.4.1 h1:HOVBfKP1oXIc0wWo9hZ8JLdZtyCPWqjvmFDuVZ0yv2Y=
+github.com/otiai10/openaigo v1.0.0 h1:E4SoShWjMVltBAkM4/QsxGPhPKZlpKp0GSK6Ov1MSOg=
+github.com/otiai10/openaigo v1.0.0/go.mod h1:792bx6AWTS61weDi2EzKpHHnTF4eDMAlJ5GvAk/mgPg=
+github.com/rs/cors v1.8.3 h1:O+qNyWn7Z+F9M0ILBHgMVPuB1xTOucVd5gtaYyXBpRo=
+github.com/rs/cors v1.8.3/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
