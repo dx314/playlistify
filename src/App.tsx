@@ -1,6 +1,4 @@
 import React, {useEffect, useState} from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import {AUTH_ENDPOINT, CLIENT_ID, REDIRECT_URI, RESPONSE_TYPE} from "./config";
 
@@ -19,6 +17,12 @@ function App() {
         }
 
         setToken(token)
+
+
+
+
+
+
 
     }, [])
 
