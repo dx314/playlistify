@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@netlify/functions": "^1.4.0",
+    "jotai": "^2.0.3",
     "prettier": "^2.8.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

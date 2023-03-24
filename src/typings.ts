@@ -23,8 +23,14 @@ export interface Usage {
     total_tokens: number
 }
 
+export interface Song {
+    artist: string
+    title: string
+    spotifyId?: string | null
+}
+
 export interface ChatMessage {
-    songs: { artist: string; title: string }[]
+    songs: Song[]
     description: string
     title: string
 }
