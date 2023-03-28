@@ -1,0 +1,51 @@
+/* EllipsisLoading.module.scss */
+.ellipsis {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 20px;
+}
+
+.ellipsis div {
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #333;
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+
+@for $i from 1 through 4 {
+  .ellipsis div:nth-child(#{$i}) {
+    left: 8px + (24px * ($i - 1));
+    animation: ellipsis#{$i} 0.6s infinite;
+  }
+}
+
+@keyframes ellipsis1 {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ellipsis2 {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(24px, 0);
+  }
+}
+
+@keyframes ellipsis3 {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}

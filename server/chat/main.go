@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/otiai10/openaigo"
 	"github.com/rs/cors"
 	"log"
 	"net/http"
+
+	_ "github.com/lib/pq"
 	"os"
 )
 
@@ -20,6 +23,7 @@ type RequestBody struct {
 
 type ChatServer struct {
 	client *openaigo.Client
+	db     *sql.DB
 }
 
 func (cs *ChatServer) Chat(w http.ResponseWriter, req *http.Request) {
@@ -75,11 +79,24 @@ func main() {
 		log.Fatal("no api key provided")
 	}
 	mux := http.NewServeMux()
+	db, err := getConnection()
+
+	if err != nil {
+		log.Fatal("db error: " + err.Error())
+	}
+
+	log.Println("database connected")
 
 	srv := ChatServer{
 		client: openaigo.NewClient(apiKey),
+		db:     db,
 	}
 	mux.HandleFunc("/chat", srv.Chat)
+	mux.HandleFunc("/spotify/token", srv.RefreshSpotifyToken)
+	mux.HandleFunc("/spotify/token/refresh", srv.RefreshSpotifyToken)
+	mux.HandleFunc("/spotify/auth", srv.AuthHandler)
+	mux.HandleFunc("/spotify/callback", srv.AuthHandler)
+
 	handler := cors.Default().Handler(mux)
 	fmt.Println("Serving Playlistify API on port " + port)
 	http.ListenAndServe(":"+port, handler)

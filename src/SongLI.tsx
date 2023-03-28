@@ -12,7 +12,8 @@ const SongLI: React.FC<{ song: Song; index: number }> = ({ song, index }) => {
                 </a>
             )}
             {!song.spotifyId && <SpotifyLogo height={"16px"} width={"16px"} color={"#2d2d2d"} />}
-            {`${index + 1}: ${song.title} - ${song.artist}`}{" "}
+            <span>{`${index + 1}.`}</span>
+            {`${song.title} - ${song.artist}`}{" "}
         </li>
     )
 }

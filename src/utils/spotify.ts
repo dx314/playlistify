@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { getVars } from "./index"
 import { Song } from "../typings"
 import { atom, useAtom } from "jotai"
-import { AUTH_ENDPOINT, CLIENT_ID, REDIRECT_URI, RESPONSE_TYPE } from "../config"
+import { API_SERVER, AUTH_ENDPOINT, CLIENT_ID, REDIRECT_URI, RESPONSE_TYPE } from "../config"
 import { LoadingBarRef } from "react-top-loading-bar"
 
 const tokenKey = "spotify_token"
@@ -16,11 +16,21 @@ const scopes = encodeURIComponent(
 )
 export const spotifyURL = `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${scopes}`
 
-export const searchSongs = async (songs: Song[], access_token: string, user: SpotifyUser, loader: (loading: boolean) => void): Promise<Song[]> => {
+export const searchSongs = async (
+    songs: Song[],
+    access_token: string,
+    user: SpotifyUser,
+    loader: (loading: boolean) => void,
+    removeKey: () => void,
+): Promise<Song[]> => {
     for (const song of songs) {
         loader(false)
-        console.log("searching!!")
-        song.spotifyId = await searchSpotify(song.title, song.artist, access_token, user.country)
+        try {
+            song.spotifyId = await searchSpotify(song.title, song.artist, access_token, user.country)
+        } catch (err) {
+            localStorage.removeItem(tokenKey)
+            localStorage.removeItem(userKey)
+        }
         loader(true)
     }
 
@@ -104,7 +114,7 @@ async function addTracksToPlaylist(accessToken: string, url: string, trackIds: s
     }
 }
 
-async function fetchUser(accessToken: string): Promise<SpotifyUser> {
+async function fetchUser(accessToken: string, reToken: () => void): Promise<SpotifyUser> {
     const url = "https://api.spotify.com/v1/me"
 
     const response = await fetch(url, {
@@ -116,6 +126,7 @@ async function fetchUser(accessToken: string): Promise<SpotifyUser> {
     })
 
     if (!response.ok) {
+        reToken()
         throw new Error(`Spotify API request failed with status ${response.status}`)
     }
 
@@ -126,11 +137,55 @@ async function fetchUser(accessToken: string): Promise<SpotifyUser> {
 interface SpotifyProperties {
     token: string | null
     user: SpotifyUser | null
+    clearSpotify: () => void
 }
 
+type RefreshTokenResponse = {
+    access_token: string
+}
+
+const refreshToken = async (refreshToken: string): Promise<string | null> => {
+    const url = `${API_SERVER}/spotify/token`
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+        })
+
+        if (!response.ok) {
+            console.error("unable to refresh spotify token")
+            throw new Error("Failed to refresh token")
+        }
+
+        const data: RefreshTokenResponse = await response.json()
+        console.log(data, "data")
+        return data.access_token
+    } catch (error) {
+        console.error("Error refreshing token:", error)
+        return null
+    }
+}
 export const useSpotify = (): SpotifyProperties => {
     const [token, setSpotifyToken] = useAtom(spotifyTokenAtom)
     const [user, setUser] = useAtom(userAtom)
+
+    const clearSpotify = () => {
+        setSpotifyToken(null)
+        setUser(null)
+    }
+
+    const reToken = async () => {
+        if (token) {
+            const t = await refreshToken(token)
+            if (t) {
+                setSpotifyToken(t)
+                localStorage.setItem(tokenKey, t)
+            }
+        }
+    }
 
     useEffect(() => {
         const hash = window.location.hash
@@ -145,17 +200,20 @@ export const useSpotify = (): SpotifyProperties => {
         }
 
         if (token) {
-            fetchUser(token).then((user) => {
+            fetchUser(token, reToken).then((user) => {
                 setUser(user)
                 localStorage.setItem(userKey, JSON.stringify(user))
             })
+        } else {
+            clearSpotify()
         }
 
         setSpotifyToken(token)
         if (token) localStorage.setItem(tokenKey, token)
         else localStorage.removeItem(tokenKey)
     }, [])
-    return { token, user }
+
+    return { token, user, clearSpotify }
 }
 
 export interface SpotifyUser {

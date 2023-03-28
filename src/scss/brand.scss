@@ -1,0 +1,16 @@
+.brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  div {
+    svg:first-child {
+      width: 40px;
+      margin-right: 10px;
+    }
+
+    svg:last-child {
+    }
+  }
+}

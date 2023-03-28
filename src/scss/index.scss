@@ -1,0 +1,42 @@
+// main.scss
+@import 'src/scss/variables';
+
+:root {
+  font-family: $font-family;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: $color-scheme-light $color-scheme-dark;
+  color: $color-text;
+  background-color: $background-color;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  font-weight: 500;
+  color: $link-color;
+  text-decoration: inherit;
+
+  &:hover {
+    color: $link-hover-color;
+  }
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-image: radial-gradient(circle at 0% 0%, #373b52, #252736 51%, #1d1e26);
+}
+
+h1 {
+  font-size: 3.2rem;
+  line-height: 1.1;
+}
