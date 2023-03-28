@@ -12,6 +12,14 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
+  nginx:
+    image: nginx:latest
+    ports:
+      - "4444:4444"
+    volumes:
+      - ./config/nginx.dev.conf:/etc/nginx/sites-enabled/nginx.dev.conf
+      - ./certs/dev.plailist.app:/etc/nginx/certs
+
   app:
     build: ./server/chat
     environment:

@@ -1,9 +1,10 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { getVars } from "./index"
 import { Song } from "../typings"
 import { atom, useAtom } from "jotai"
 import { API_SERVER, AUTH_ENDPOINT, CLIENT_ID, REDIRECT_URI, RESPONSE_TYPE } from "../config"
 import { LoadingBarRef } from "react-top-loading-bar"
+import { useLocation } from "react-router-dom"
 
 const tokenKey = "spotify_token"
 const userKey = "user"
@@ -144,74 +145,22 @@ type RefreshTokenResponse = {
     access_token: string
 }
 
-const refreshToken = async (refreshToken: string): Promise<string | null> => {
-    const url = `${API_SERVER}/spotify/token`
-    try {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ refresh_token: refreshToken }),
-        })
-
-        if (!response.ok) {
-            console.error("unable to refresh spotify token")
-            throw new Error("Failed to refresh token")
-        }
-
-        const data: RefreshTokenResponse = await response.json()
-        console.log(data, "data")
-        return data.access_token
-    } catch (error) {
-        console.error("Error refreshing token:", error)
-        return null
-    }
-}
 export const useSpotify = (): SpotifyProperties => {
-    const [token, setSpotifyToken] = useAtom(spotifyTokenAtom)
+    const [token, setAccessToken] = useAtom(spotifyTokenAtom)
     const [user, setUser] = useAtom(userAtom)
+    const location = useLocation()
 
     const clearSpotify = () => {
-        setSpotifyToken(null)
+        setAccessToken(null)
         setUser(null)
     }
 
-    const reToken = async () => {
-        if (token) {
-            const t = await refreshToken(token)
-            if (t) {
-                setSpotifyToken(t)
-                localStorage.setItem(tokenKey, t)
-            }
-        }
-    }
-
     useEffect(() => {
-        const hash = window.location.hash
-        let token: string | null = localStorage.getItem(tokenKey)
-
-        if (!token && hash) {
-            token = getVars(hash)["access_token"]
-            if (token && token !== "") {
-                window.location.hash = ""
-                window.localStorage.setItem(tokenKey, token)
-            }
-        }
-
-        if (token) {
-            fetchUser(token, reToken).then((user) => {
-                setUser(user)
-                localStorage.setItem(userKey, JSON.stringify(user))
-            })
-        } else {
-            clearSpotify()
-        }
-
-        setSpotifyToken(token)
-        if (token) localStorage.setItem(tokenKey, token)
-        else localStorage.removeItem(tokenKey)
-    }, [])
+        // Get the access_token parameter from the URL
+        const searchParams = new URLSearchParams(location.search)
+        const token = searchParams.get("access_token")
+        setAccessToken(token === "" ? null : token)
+    }, [location.search])
 
     return { token, user, clearSpotify }
 }
@@ -219,7 +168,6 @@ export const useSpotify = (): SpotifyProperties => {
 export interface SpotifyUser {
     country: string
     display_name: string
-    email: string
     external_urls: {
         spotify: string
     }
