@@ -202,7 +202,7 @@ func (srv *ChatServer) AuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
-	http.Redirect(w, r, fmt.Sprintf("/?access_token=%s", token.AccessToken), 302)
+	http.Redirect(w, r, "/", 302)
 }
 
 func fetchTokens(authCode string) (*TokenResponse, error) {
