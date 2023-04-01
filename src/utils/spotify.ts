@@ -83,7 +83,8 @@ export async function createPlaylistAndAddTracks(
     trackIds: string[],
     description: string = "",
 ): Promise<string> {
-    const createPlaylistUrl = `https://api.spotify.com/v1/users/${user.id}/playlists`
+    console.log(user, "user")
+    const createPlaylistUrl = `https://api.spotify.com/v1/users/${user.display_name}/playlists`
     const playlistData = await createPlaylist(accessToken, createPlaylistUrl, playlistName, description)
     const playlistId = playlistData.id
 
