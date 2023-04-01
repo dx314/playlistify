@@ -8,9 +8,9 @@ const ConnectSpotify: React.FC = () => {
     return (
         <Modal isOpen={true} onClose={() => undefined}>
             <Info />
-            <button className={"spotify-connect"}>
-                <a href={spotifyURL}>Connect Spotify</a>
-            </button>
+            <a className="spotify-connect" href={spotifyURL}>
+                Connect Spotify
+            </a>
         </Modal>
     )
 }

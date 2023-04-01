@@ -45,3 +45,7 @@ export function getRandomPrompt() {
     const randomIndex = Math.floor(Math.random() * prompts.length)
     return prompts[randomIndex]
 }
+
+export function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}

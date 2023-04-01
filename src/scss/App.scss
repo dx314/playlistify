@@ -81,14 +81,9 @@ ul {
   margin: 20px;
   transition: all 0.3s ease;
   &:hover {
+    color: #000;
     background-color: $spotify-color;
-    a {
-      font-weight: 800;
-      color: #000;
-    }
-  }
-  & a {
-    color: $spotify-color;
+    font-weight: 800;
   }
 }
 

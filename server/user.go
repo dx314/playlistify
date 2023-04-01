@@ -15,6 +15,7 @@ var JWTSecret string = os.Getenv("PLAYLISTIFY_JWT_SECRET")
 
 func (srv *ChatServer) withUser(next http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var user *User
 		cookie, err := r.Cookie("auth_token")
 		if err != nil {
 			w.Write([]byte("no cookie found"))
@@ -38,12 +39,22 @@ func (srv *ChatServer) withUser(next http.HandlerFunc) http.Handler {
 				claims := jwtToken.Claims.(jwt.MapClaims)
 				userID := claims["user_id"].(string)
 
-				user, err := getUser(srv.db, userID)
+				user, err = getUser(srv.db, userID)
 				if err == nil {
 					ctx := context.WithValue(r.Context(), "user", user)
 					r = r.WithContext(ctx)
 				}
+			} else {
+				w.Write([]byte("no token found"))
+				w.WriteHeader(400)
+				return
 			}
+		}
+
+		if user == nil || user.ID == "" {
+			w.Write([]byte("no token found"))
+			w.WriteHeader(400)
+			return
 		}
 
 		next.ServeHTTP(w, r)

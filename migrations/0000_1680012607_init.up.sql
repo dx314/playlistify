@@ -1,6 +1,8 @@
 -- Write your 'up' migration SQL here
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+create schema if not exists public;
+
 CREATE TABLE users
 (
     id           uuid PRIMARY KEY         DEFAULT uuid_generate_v4(),

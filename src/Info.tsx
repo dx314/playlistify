@@ -12,7 +12,7 @@ const Info: React.FC = () => (
                 Enter a prompt: In the text box, type a prompt that describes your music preferences, mood, song inspiration, or a theme for the playlist. E.g.
                 "upbeat pop music for a workout" or "relaxing jazz for a rainy day."
             </li>
-            <li>Click the "Fetch Playlist" button, and ChatGPT will generate a playlist based on your prompt.</li>
+            <li>Click the ▷ button, and ChatGPT will generate a playlist based on your prompt.</li>
             <li>If you like the recommended playlist, click the "Add to Spotify" button to add it to your Spotify library.</li>
             <li>
                 Open the playlist in Spotify: After the playlist has been added to your Spotify account, you can click the "Open in Spotify" button to open the

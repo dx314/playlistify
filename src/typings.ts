@@ -29,7 +29,7 @@ export interface Song {
     spotifyId?: string | null
 }
 
-export interface ChatMessage {
+export interface AIPlaylist {
     songs: Song[]
     description: string
     title: string

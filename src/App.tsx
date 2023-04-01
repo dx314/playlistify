@@ -2,7 +2,7 @@ import React, { KeyboardEvent, useEffect, useMemo, useRef, useState } from "reac
 import "./scss/App.scss"
 import "./media.css"
 import { API_SERVER } from "./config"
-import { ChatGPTResponse, ChatMessage } from "./typings"
+import { ChatGPTResponse, AIPlaylist } from "./typings"
 import LoadingBar, { LoadingBarRef } from "react-top-loading-bar"
 import ConnectSpotify from "./ConnectSpotify"
 import { searchSongs, useSpotify } from "./utils/spotify"
@@ -12,6 +12,7 @@ import Thinking from "./Thinking"
 import Input from "./Input"
 import Playlist from "./Playlist"
 import Brand from "./Brand"
+import Loader from "./Loader"
 
 function App() {
     const [prompt, setPrompt] = useState<string>(getRandomPrompt())
@@ -23,13 +24,13 @@ function App() {
 
     const [now, setNow] = useState<Date>(new Date())
 
-    const response = useRef<ChatMessage | null>(null)
-    const { token: spotifyToken, user, clearSpotify } = useSpotify()
+    const [playlist, setPlaylist] = useState<AIPlaylist | null>(null)
+    const { token: spotifyToken, user, verified } = useSpotify()
 
     useEffect(() => {
         const playlist = localStorage.getItem("playlist")
         if (playlist) {
-            response.current = JSON.parse(playlist)
+            setPlaylist(JSON.parse(playlist))
         }
         setLoading(false)
     }, [])
@@ -47,6 +48,7 @@ function App() {
             if (!prompt || prompt === "" || prompt.length < 3) return
             setLoading(true)
             setThinking(true)
+
             const res = await fetch(`${API_SERVER}/chat`, {
                 method: "POST",
                 headers: {
@@ -58,31 +60,14 @@ function App() {
             const resp: ChatGPTResponse = await res.json()
 
             const st = resp.choices[0].message.content.replaceAll("\n", "")
-            const msg: ChatMessage = JSON.parse(st)
+
+            const msg: AIPlaylist = JSON.parse(st)
             //setSongs(msg.split("\n"))
-            response.current = msg
+
+            setPlaylist(msg)
             setPrompted(prompt)
             setLoading(false)
             setThinking(false)
-            if (response.current && response.current.songs && spotifyToken && user) {
-                setLoading("#1DB954")
-                searchSongs(
-                    response.current.songs,
-                    spotifyToken,
-                    user,
-                    (loading: boolean) => {
-                        if (ref.current) {
-                            ref.current.complete()
-                            if (loading) ref.current.continuousStart()
-                        }
-                        setNow(new Date())
-                    },
-                    clearSpotify,
-                ).then(() => {
-                    setLoading(false)
-                    localStorage.setItem("playlist", JSON.stringify(response.current))
-                })
-            }
         },
         [prompt],
     )
@@ -91,6 +76,15 @@ function App() {
         if (e.key === "Enter" && prompt !== "") {
             fetchPlaylist()
         }
+    }
+
+    if (!verified) {
+        return (
+            <div className={!loading ? "App" : "App loading"}>
+                <LoadingBar color={typeof loading === "string" ? loading : "#008080"} ref={ref} />
+                <Loader />
+            </div>
+        )
     }
 
     return (
@@ -117,11 +111,11 @@ function App() {
             {thinking && <Thinking />}
             <LoadingBar color={typeof loading === "string" ? loading : "#008080"} ref={ref} />
 
-            {response.current && spotifyToken && user && (
-                <Playlist playlist={response.current} spotifyToken={spotifyToken} setLoading={setLoading} user={user} />
+            {playlist && spotifyToken && user && (
+                <Playlist setPlaylist={setPlaylist} playlist={playlist} spotifyToken={spotifyToken} setLoading={setLoading} user={user} />
             )}
 
-            {!spotifyToken && <ConnectSpotify />}
+            {!user && <ConnectSpotify />}
             <Info />
         </div>
     )

@@ -1,7 +1,8 @@
 import * as React from "react"
 import { Song } from "./typings"
-import { createPlaylistAndAddTracks, SpotifyUser } from "./utils/spotify"
+import { createPlaylistAndAddTracks } from "./utils/spotify"
 import { isString, SpotifyGreen } from "./utils"
+import { SpotifyUser } from "./spotifyTypes"
 
 interface Props {
     songs: Song[]
