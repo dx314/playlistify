@@ -24,8 +24,6 @@ func (srv *ChatServer) withUser(next http.HandlerFunc) http.Handler {
 		if err == nil && cookie != nil {
 			tokenString := cookie.Value
 
-			fmt.Println("tokenString")
-
 			jwtToken, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 				return []byte(JWTSecret), nil
 			})
@@ -64,11 +62,12 @@ func (srv *ChatServer) Auth(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if token.ExpiresAt.Before(time.Now()) {
-			token, err = srv.RefreshSpotifyToken(user, token)
+			token, err = RefreshSpotifyAccessToken(token)
 			if err != nil {
 				http.Redirect(w, r, authEndpoint, 302)
 				return
 			}
+			upsertToken(srv.db, token)
 		}
 
 		http.Redirect(w, r, fmt.Sprintf("/?access_token=%s", token.AccessToken), 302)
@@ -87,9 +86,10 @@ func (srv *ChatServer) Me(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token, err := getTokenByUserID(srv.db, user.ID)
-	if user != nil {
+	if err != nil || token == nil {
 		w.Write([]byte("no access token"))
 		w.WriteHeader(400)
+		return
 	}
 
 	response := struct {

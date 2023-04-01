@@ -42,12 +42,13 @@ func (srv *ChatServer) Chat(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if token.ExpiresAt.Before(time.Now()) {
-		token, err = srv.RefreshSpotifyToken(user, token)
+		token, err = RefreshSpotifyAccessToken(token)
 		if err != nil {
 			w.Write([]byte(err.Error()))
 			w.WriteHeader(400)
 			return
 		}
+		upsertToken(srv.db, token)
 	}
 
 	rb := &RequestBody{}
@@ -67,7 +68,7 @@ func (srv *ChatServer) Chat(w http.ResponseWriter, req *http.Request) {
 		Model:       "gpt-3.5-turbo",
 		Temperature: 0.5,
 		Messages: []openaigo.ChatMessage{
-			{Role: "user", Content: "generate a playlist of 12 real and existing songs based on the following: `" + rb.Msg + "`\n layout your response in the following json template: `{ songs: {artist: string, title: string}[], description: string, title: string }`. in the description field please explain your logic for the playlist. give the playlist a really fun title based on your logic. do not give me any data outside the json. Make sure to include only tracks that have been officially released on Spotify and avoid any made-up or reimagined songs."},
+			{Role: "user", Content: "generate a playlist of 12 to 16 real and existing songs based on the following: `" + rb.Msg + "`\n layout your response in the following json template: `{ songs: {artist: string, title: string}[], description: string, title: string }`. in the description field please explain your logic for the playlist. give the playlist a really fun title based on your logic. do not give me any data outside the json. Make sure to include only tracks that have been officially released on Spotify and avoid any made-up or reimagined songs."},
 		},
 	}
 
@@ -100,8 +101,8 @@ func main() {
 		log.Fatalf("no api key provided")
 	}
 
-	if clientSecret == "" || clientID == "" || redirectURI == "" || authedRedir == "" {
-		log.Fatalf("OS env keys not set (clientSecret: %s; clientID: %s; redirectURI: %s; authedRedir: %s)", clientSecret, clientID, redirectURI, authedRedir)
+	if clientSecret == "" || clientID == "" || redirectURI == "" {
+		log.Fatalf("OS env keys not set (clientSecret: %s; clientID: %s; redirectURI: %s;)", clientSecret, clientID, redirectURI)
 	}
 
 	if JWTSecret == "" {
@@ -121,10 +122,14 @@ func main() {
 		client: openaigo.NewClient(apiKey),
 		db:     db,
 	}
-	mux.Handle("/api/chat", srv.withUser(srv.Chat))
-	mux.Handle("/api/me", srv.withUser(srv.Me))
-	mux.Handle("/api/auth", srv.withUser(srv.Auth))
-	mux.HandleFunc("/api/spotify/callback", srv.AuthHandler)
+	mux.Handle("/chat", srv.withUser(srv.Chat))
+	mux.Handle("/me", srv.withUser(srv.Me))
+	mux.Handle("/auth", srv.withUser(srv.Auth))
+	mux.Handle("/spotify/api/", srv.withUser(srv.ForwardToSpotifyAPI))
+	mux.HandleFunc("/spotify/callback", srv.AuthHandler)
+	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println(request.URL.Path)
+	})
 
 	handler := cors.Default().Handler(mux)
 	fmt.Println("Serving Playlistify API on port " + port)

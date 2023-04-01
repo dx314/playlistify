@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -20,8 +21,6 @@ var clientSecret = os.Getenv("PLAYLISTIFY_SPOTIFY_SECRET")
 var clientID = os.Getenv("PLAYLISTIFY_SPOTIFY_ID")
 var redirectURI = os.Getenv("PLAYLISTIFY_SPOTIFY_REDIR")
 
-var authedRedir = os.Getenv("PLAYLISTIFY_AUTH_REDIR")
-
 var scopes = []string{
 	"user-read-private",
 	"playlist-modify-private",
@@ -38,45 +37,70 @@ type RefreshTokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func (srv *ChatServer) RefreshSpotifyToken(user *User, token *Token) (*Token, error) {
-	formData := url.Values{
-		"grant_type":    {"refresh_token"},
-		"refresh_token": {token.RefreshToken},
+func RefreshSpotifyAccessToken(token *Token) (*Token, error) {
+	// Create a new HTTP client
+	if token == nil || token.RefreshToken == "" {
+		return nil, errors.New("no token or no refresh token")
 	}
-
-	req, err := http.NewRequest("POST", "https://accounts.spotify.com/api/token", strings.NewReader(formData.Encode()))
-	if err != nil {
-		return nil, errors.New("Failed to create request")
-	}
-
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", os.Getenv("SPOTIFY_CLIENT_ID"), os.Getenv("SPOTIFY_CLIENT_SECRET"))))))
 
 	client := &http.Client{}
+
+	// Create a new URL for the Spotify token endpoint
+	tokenUrl := "https://accounts.spotify.com/api/token"
+
+	// Create a new request to the Spotify token endpoint
+	form := url.Values{}
+	form.Set("grant_type", "refresh_token")
+	form.Set("refresh_token", token.RefreshToken)
+	req, err := http.NewRequest("POST", tokenUrl, bytes.NewBufferString(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	// Add the Authorization header with the client credentials
+	clientCreds := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", clientID, clientSecret)))
+	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", clientCreds))
+
+	// Set the Content-Type header to "application/x-www-form-urlencoded"
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	// Send the request to the Spotify token endpoint
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, errors.New("Failed to fetch new token")
+		return nil, err
 	}
-	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	// Decode the response body into a map
+	var body map[string]interface{}
+
+	bodystr, err := io.ReadAll(resp.Body)
+
+	err = json.Unmarshal(bodystr, &body)
 	if err != nil {
-		return nil, errors.New("Failed to read response body")
+		return nil, err
 	}
 
-	var tokenResponse TokenResponse
-	err = json.Unmarshal(body, &tokenResponse)
-	if err != nil {
-		return nil, errors.New("Failed to parse JSON")
+	// Get the access token from the response body
+	accessToken, ok := body["access_token"].(string)
+	if !ok {
+		return nil, fmt.Errorf("could not get access token from response")
 	}
 
-	token.AccessToken = tokenResponse.AccessToken
-	token.ExpiresAt = time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second)
-	err = upsertToken(srv.db, token)
-	if err != nil {
-		return nil, errors.New("Failed to update token in database")
+	refreshToken, ok := body["refresh_token"].(string)
+
+	token.AccessToken = accessToken
+	if ok && refreshToken != "" {
+		token.RefreshToken = refreshToken
 	}
 
+	// Get the expiration time from the response body
+	expirySeconds, ok := body["expires_in"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("could not get token expiry from response")
+	}
+	token.ExpiresAt = time.Now().Add(time.Duration(expirySeconds) * time.Second)
+
+	// Return the access token and the expiry time
 	return token, nil
 }
 
@@ -203,23 +227,19 @@ func fetchTokens(authCode string) (*TokenResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("STATUS?", http.StatusOK)
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("ERROR OK", redirectURI)
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			fmt.Println("ERROR 3:", err.Error())
+			log.Println("Failure to fetch token: %s", string(body))
 			log.Println("Error reading response body: %v", err)
 		}
 
-		fmt.Println(string(body))
 		return nil, fmt.Errorf("failed to fetch tokens, status code: %d", resp.StatusCode)
 	}
 
 	var tokenResponse TokenResponse
 	err = json.NewDecoder(resp.Body).Decode(&tokenResponse)
 	if err != nil {
-		fmt.Println("ERROR 4:", err.Error())
 		return nil, err
 	}
 
@@ -244,7 +264,6 @@ func fetchUserProfile(accessToken string) (*SpotifyUserProfile, error) {
 		log.Fatal("Error:", err)
 	}
 
-	fmt.Println("Raw JSON response:", string(body))
 	resp.Body.Close()
 
 	var profile SpotifyUserProfile
