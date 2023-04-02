@@ -18,31 +18,39 @@ button {
   100%{background-position:100% 0}
 }
 
+.plailist-container {
+  padding: 2px;
+  background: radial-gradient(farthest-corner at top, #1DB954, #8348FF, #1DB954, #FF6AD5, #1DB954, #8348FF) top right/200% 200%;
+  animation: moveBackground 8s infinite steps(75);
+  .plailist-input button, .playlist {
+    background: radial-gradient(circle at 0% 0%, #232841, #12121a 51%, #1d1e26);
+  }
+  .plailist-input input {
+    background: linear-gradient(#0d0e17, #12121a 51%, #1d1e26);
+  }
+  > .spacer {
+    background: transparent;
+    height: 5px;
+  }
+}
+
+/* Define the keyframe animation */
+@keyframes moveBackground {
+  to {
+    background-position:top left;
+  }
+}
+
 .plailist-input {
   position: relative;
   display: flex;
   flex-direction: row;
   width: 100%;
-  margin: 0 auto;
+  margin: 2px;
   border-radius: 2px;
-  background: rgba(0,0,0,0.2);
+  background: transparent !important;
   input {
    text-align: left;
-  }
-  &:after {
-    content: "";
-    position: absolute;
-    left: 0px;
-    right: 0px;
-    bottom: 0px;
-    z-index: 999;
-    height: 4px;
-    border-bottom-left-radius: 2px;
-    border-bottom-right-radius: 2px;
-    background-position: 0% 0%;
-    background: linear-gradient(to right, #1DB954, #8348FF, #1DB954, #FF6AD5, #1DB954, #8348FF);
-    background-size: 500% auto;
-    animation: gradient 3s linear infinite;
   }
 }
 

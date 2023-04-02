@@ -108,31 +108,33 @@ function App() {
     return (
         <div className={!loading ? "App" : "App loading"}>
             <Brand />
-            <div className={"searchbox"}>
-                <Input
-                    onFocus={() => {
-                        if (!hadFocus) {
-                            setPrompt("")
-                            setHadFocus(true)
-                        }
-                    }}
-                    placeholder={`enter a prompt, such as "${getRandomPrompt()}"`}
-                    onKeyDown={chat}
-                    value={prompt}
-                    disabled={loading === true}
-                    isLoading={!!loading}
-                    isRefresh={prompted === prompt}
-                    onButton={fetchPlaylist}
-                    onChange={(e) => setPrompt(e.target.value)}
-                />
+            <div className={"plailist-container"}>
+                <div className={"searchbox"}>
+                    <Input
+                        onFocus={() => {
+                            if (!hadFocus) {
+                                setPrompt("")
+                                setHadFocus(true)
+                            }
+                        }}
+                        placeholder={`enter a prompt, such as "${getRandomPrompt()}"`}
+                        onKeyDown={chat}
+                        value={prompt}
+                        disabled={loading === true}
+                        isLoading={!!loading}
+                        isRefresh={prompted === prompt}
+                        onButton={fetchPlaylist}
+                        onChange={(e) => setPrompt(e.target.value)}
+                    />
+                </div>
+                <div className={"spacer"} />
+                {thinking && <Thinking />}
+                <LoadingBar color={typeof loading === "string" ? loading : "#008080"} ref={ref} />
+
+                {playlist && spotifyToken && user && (
+                    <Playlist setPlaylist={setPlaylist} playlist={playlist} spotifyToken={spotifyToken} setLoading={setLoading} user={user} />
+                )}
             </div>
-            {thinking && <Thinking />}
-            <LoadingBar color={typeof loading === "string" ? loading : "#008080"} ref={ref} />
-
-            {playlist && spotifyToken && user && (
-                <Playlist setPlaylist={setPlaylist} playlist={playlist} spotifyToken={spotifyToken} setLoading={setLoading} user={user} />
-            )}
-
             {!user && <ConnectSpotify />}
             {err && err !== "" && (
                 <Modal isOpen={true} onClose={() => setError(null)} closeable={true}>

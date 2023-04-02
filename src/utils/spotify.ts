@@ -57,7 +57,7 @@ export const searchSongs = async (playlist: AIPlaylist, access_token: string, us
 }
 
 async function searchSpotify(title: string, artist: string, accessToken: string, market: string = "US"): Promise<string | null> {
-    const query = `track:${encodeURIComponent(title)} artist:${encodeURIComponent(artist)}`
+    const query = encodeURIComponent(`${title} ${artist}`)
     const types = "track"
     const limit = 1
     const include_external = "audio"
