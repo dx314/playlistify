@@ -64,11 +64,15 @@ func (srv *ChatServer) Chat(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	content := "generate a playlist of real and existing songs, must have more than 12 tracks and no more than 20, based on the following input: `" + rb.Msg + "`\n layout your response in the following json template: `{ songs: {artist: string, title: string}[], description: string, title: string }` make sure the response is 100% valid JSON. No album information. In the description field please explain your logic for the playlist. give the playlist a really fun title based on your logic. do not give me any data outside the json. Make sure to include only tracks that have been officially released on Spotify and avoid any made-up or reimagined songs."
+
+	fmt.Println(content)
+
 	chreq := openaigo.ChatCompletionRequestBody{
 		Model:       "gpt-3.5-turbo",
 		Temperature: 0.5,
 		Messages: []openaigo.ChatMessage{
-			{Role: "user", Content: "generate a playlist of 12 to 16 real and existing songs based on the following: `" + rb.Msg + "`\n layout your response in the following json template: `{ songs: {artist: string, title: string}[], description: string, title: string }`. in the description field please explain your logic for the playlist. give the playlist a really fun title based on your logic. do not give me any data outside the json. Make sure to include only tracks that have been officially released on Spotify and avoid any made-up or reimagined songs."},
+			{Role: "user", Content: content},
 		},
 	}
 
