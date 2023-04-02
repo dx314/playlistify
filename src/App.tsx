@@ -5,7 +5,7 @@ import { API_SERVER } from "./config"
 import { ChatGPTResponse, AIPlaylist } from "./typings"
 import LoadingBar, { LoadingBarRef } from "react-top-loading-bar"
 import ConnectSpotify from "./ConnectSpotify"
-import { searchSongs, useSpotify } from "./utils/spotify"
+import { errAtom, searchSongs, useSpotify } from "./utils/spotify"
 import Info from "./Info"
 import { getRandomPrompt } from "./utils"
 import Thinking from "./Thinking"
@@ -13,6 +13,8 @@ import Input from "./Input"
 import Playlist from "./Playlist"
 import Brand from "./Brand"
 import Loader from "./Loader"
+import { useAtom } from "jotai"
+import Modal from "./Modal"
 
 function App() {
     const [prompt, setPrompt] = useState<string>(getRandomPrompt())
@@ -20,6 +22,8 @@ function App() {
     const [prompted, setPrompted] = useState<string | null>(null)
     const [loading, setLoading] = useState<boolean | string>(true)
     const [thinking, setThinking] = useState<boolean>(false)
+    const [err, setError] = useAtom(errAtom)
+
     const ref = useRef<LoadingBarRef>(null)
 
     const [now, setNow] = useState<Date>(new Date())
@@ -49,25 +53,39 @@ function App() {
             setLoading(true)
             setThinking(true)
 
-            const res = await fetch(`${API_SERVER}/chat`, {
-                method: "POST",
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ msg: prompt }),
-            })
-            const resp: ChatGPTResponse = await res.json()
+            try {
+                const res = await fetch(`${API_SERVER}/notchat`, {
+                    method: "POST",
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ msg: prompt }),
+                })
+                if (!res.ok) {
+                    let text: string = ""
+                    try {
+                        text = await res.text()
+                    } catch {
+                        text = "no error body"
+                    }
+                    throw new Error(`${res.statusText}: ${text}`)
+                }
+                const resp: ChatGPTResponse = await res.json()
 
-            const st = resp.choices[0].message.content.replaceAll("\n", "")
+                const st = resp.choices[0].message.content.replaceAll("\n", "")
 
-            const msg: AIPlaylist = JSON.parse(st)
-            //setSongs(msg.split("\n"))
+                const msg: AIPlaylist = JSON.parse(st)
+                //setSongs(msg.split("\n"))
 
-            setPlaylist(msg)
-            setPrompted(prompt)
-            setLoading(false)
-            setThinking(false)
+                setPlaylist(msg)
+                setPrompted(prompt)
+                setLoading(false)
+                setThinking(false)
+            } catch (err: any) {
+                setError(err.message)
+                return
+            }
         },
         [prompt],
     )
@@ -116,6 +134,11 @@ function App() {
             )}
 
             {!user && <ConnectSpotify />}
+            {err && err !== "" && (
+                <Modal isOpen={true} onClose={() => setError(null)} closeable={true}>
+                    <p>{err}</p>
+                </Modal>
+            )}
             <Info />
         </div>
     )

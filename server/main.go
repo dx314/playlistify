@@ -129,6 +129,7 @@ func main() {
 	mux.HandleFunc("/spotify/callback", srv.AuthHandler)
 	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		log.Println(request.URL.Path)
+		http.Error(writer, "nothing here", 404)
 	})
 
 	handler := cors.Default().Handler(mux)

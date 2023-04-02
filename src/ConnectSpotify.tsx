@@ -6,7 +6,7 @@ import Info from "./Info"
 
 const ConnectSpotify: React.FC = () => {
     return (
-        <Modal isOpen={true} onClose={() => undefined}>
+        <Modal isOpen={true} onClose={() => undefined} closeable={false}>
             <Info />
             <a className="spotify-connect" href={spotifyURL}>
                 Connect Spotify

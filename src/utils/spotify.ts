@@ -12,6 +12,7 @@ const userKey = "user"
 export const spotifyTokenAtom = atom<string | null>(localStorage.getItem(tokenKey))
 const initialUser: SpotifyUser | null = JSON.parse(`${localStorage.getItem(userKey)}`)
 export const userAtom = atom<SpotifyUser | null>(initialUser)
+export const errAtom = atom<string | null>(null)
 
 const scopes = encodeURIComponent(
     ["user-read-private", "playlist-modify-private", "playlist-modify-public", "playlist-read-private", "playlist-read-collaborative"].join(" "),
@@ -84,7 +85,7 @@ export async function createPlaylistAndAddTracks(
     description: string = "",
 ): Promise<string> {
     console.log(user, "user")
-    const createPlaylistUrl = `https://api.spotify.com/v1/users/${user.display_name}/playlists`
+    const createPlaylistUrl = `https://api.spotify.com/v1/users/${user.spotify_id}/playlists`
     const playlistData = await createPlaylist(accessToken, createPlaylistUrl, playlistName, description)
     const playlistId = playlistData.id
 
@@ -105,7 +106,14 @@ async function createPlaylist(accessToken: string, url: string, name: string, de
     })
 
     if (!response.ok) {
-        throw new Error(`Spotify API request failed with status ${response.status}`)
+        let text: string = ""
+        try {
+            text = await response.text()
+        } catch {
+            text = "no error body"
+        }
+
+        throw new Error(`Spotify API request failed with status ${response.statusText}: ${text}`)
     }
 
     return response.json()
@@ -124,7 +132,14 @@ async function addTracksToPlaylist(accessToken: string, url: string, trackIds: s
     })
 
     if (!response.ok) {
-        throw new Error(`Spotify API request failed with status ${response.status}`)
+        let text: string = ""
+        try {
+            text = await response.text()
+        } catch {
+            text = "no error body"
+        }
+
+        throw new Error(`Spotify API request failed with status ${response.statusText}: ${text}`)
     }
 }
 
@@ -164,6 +179,7 @@ export const useSpotify = (): SpotifyProperties => {
     const [user, setUser] = useAtom(userAtom)
     const [verified, setVerified] = useState<boolean>(false)
     const location = useLocation()
+    const [err, setError] = useAtom(errAtom)
 
     useEffect(() => {
         const getUser = async () => {
@@ -177,7 +193,13 @@ export const useSpotify = (): SpotifyProperties => {
             setVerified(true)
 
             if (!response.ok) {
-                throw new Error(`Error retrieving user: ${response.status}`)
+                let text: string = ""
+                try {
+                    text = await response.text()
+                } catch {
+                    text = "no error body"
+                }
+                throw new Error(`Error retrieving user: ${response.statusText}: ${text}`)
             }
 
             try {
@@ -188,7 +210,6 @@ export const useSpotify = (): SpotifyProperties => {
                 console.error("unable to save user", err)
             }
         }
-
         getUser()
     }, [])
 

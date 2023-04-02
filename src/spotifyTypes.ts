@@ -1,5 +1,6 @@
 export interface SpotifyUser {
     country: string
+    spotify_id: string
     access_token: string
     display_name: string
     external_urls: {
