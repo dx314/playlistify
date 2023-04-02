@@ -54,7 +54,7 @@ function App() {
             setThinking(true)
 
             try {
-                const res = await fetch(`${API_SERVER}/notchat`, {
+                const res = await fetch(`${API_SERVER}/chat`, {
                     method: "POST",
                     headers: {
                         Accept: "application/json",
